@@ -138,6 +138,7 @@ strong {
 
 .modal{
   display: none;
+  width: 350px;
   position: absolute;
   background: #b00b69;
   color:azure;

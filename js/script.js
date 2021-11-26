@@ -3,30 +3,40 @@ const cart = document.querySelector('.cart');
 const modal = document.querySelector('.modal');
 const cartBtn = document.querySelector('.emojiCart');
 const cartProductsNum = document.querySelector('.cartProductsNumber');
+const deleteCart = document.querySelector('.deleteCart');
 let totalCart = 0;
 let userCart = [];
+let productsList = [];
+
 if (userCart.length !== 0) {
   let cartItems = JSON.parse(localStorage.getItem("userCart"));
   userCart = cartItems;
   cartItems = JSON.parse(localStorage.getItem("userCart"));
   modal.innerText = cartItems.join(`\n`) + `\n` + `Totale ${Math.round(100 * totalCart) / 100} €`;
 }
-cartProductsNum.innerText = `Numero prodotti: ${localStorage.getItem('totCartItems')}`;
 
+// mostra numero prodotti e carrello al caricamento della pagina -------------------------------------------------------------------------------
+cartProductsNum.innerText = `Numero prodotti: ${localStorage.getItem('totCartItems') || 0}`;
+
+// funzione per mostrare i prodotti salvati nel carrello --------------------------------------------------------------------------
+function setCartProductsNum() {
+  cartProductsNum.textContent = `Numero prodotti: ${localStorage.getItem("totCartItems")
+    } `;
+}
 // bottone carrello ---------------------------------------------------
 cartBtn.addEventListener('click', () => {
   if (modal.style.display !== 'block') {
     modal.style.display = 'block';
-    let cartItems = JSON.parse(localStorage.getItem("userCart"));
-    modal.innerText = cartItems.join(`\n`) + `\n` + `Totale ${Math.round(100 * totalCart) / 100} €`;
+    setCartProductsNum();
   }
   else if (modal.style.display !== 'none') {
     modal.style.display = 'none';
   }
 })
 
-function createProduct(parent, imgUrl, productTitle, textPrice) {
+function createProduct(parent, imgUrl, productTitle, textPrice, idProduct) {
   const products = document.createElement("div");
+  products.setAttribute("id", idProduct);
   products.className = "product";
 
   createImg(products, imgUrl, productTitle);
@@ -34,20 +44,28 @@ function createProduct(parent, imgUrl, productTitle, textPrice) {
   parent.appendChild(products);
 
   // aggiunta carrello -------------------------------------------------------------------
-  products.addEventListener('click', () => {
+  products.addEventListener('click', (e) => {
 
     totalCart += textPrice;
     cart.innerText = `Totale carrello ${Math.round(100 * totalCart) / 100}€`;
 
-    userCart.push(productTitle, `${textPrice} €`, `\n`);
+    userCart.push(
+      productsList.find(
+        (product) => parseInt(e.currentTarget.id) === product.id
+      ));
 
-    let cartItems = JSON.parse(localStorage.getItem("userCart"));
-    modal.innerText = userCart.join(`\n`) + `\n` + `Totale ${Math.round(100 * totalCart) / 100} €`;
 
-    localStorage.setItem('userCart', JSON.stringify(userCart));
-    localStorage.setItem('totCartItems', `${userCart.length / 3}`);
-    cartProductsNum.innerText = `Numero prodotti: ${localStorage.getItem('totCartItems')}`
-    console.log(userCart)
+
+    localStorage.setItem("totCartItems", parseInt(localStorage.getItem("totCartItems")) + 1);
+
+
+    setCartProductsNum();
+    let product = JSON.parse(localStorage.getItem('userCart')).join(`\n`);
+
+    modal.innerText = product + `\n` + `Totale ${Math.round(100 * totalCart) / 100} €`;
+    console.log(userCart);
+    console.log(product[0]);
+
   })
 }
 
@@ -81,7 +99,7 @@ const wrapperProducts = document.querySelector(".wrapper__products");
 
 function renderProducts(listItems) {
   listItems.map((product) => {
-    createProduct(wrapperProducts, product.image, product.title, product.price);
+    createProduct(wrapperProducts, product.image, product.title, product.price, product.id);
   });
 }
 
@@ -89,10 +107,19 @@ function renderProducts(listItems) {
 const getProductsList = async () => {
   const res = await fetch("https://fakestoreapi.com/products");
   const data = await res.json();
+  productsList = data;
   return renderProducts(data);
 };
 
 getProductsList();
+
+deleteCart.addEventListener("click", () => {
+  totalCart = 0;
+  userCart.length = 0;
+  localStorage.setItem("totCartItems", userCart.length);
+  localStorage.setItem("userCart", 'Carrello Vuoto');
+  setCartProductsNum();
+});
 
 // background hero dinamica -------------------------------------------
 setInterval(() => {
